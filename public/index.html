@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Тысяча — онлайн</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Игра Тысяча</h1>
+  <div id="game"></div>
+  <button onclick="start()">Начать игру</button>
+
+  <script>
+    const socket = io();
+
+    socket.on('yourHand', (hand) => {
+      document.getElementById('game').innerText = 'Твои карты: ' + hand.join(', ');
+    });
+
+    socket.on('startBid', () => {
+      const bid = prompt('Ставка (100–120, кратно 5):');
+      socket.emit('bid', parseInt(bid));
+    });
+
+    socket.on('chooseDiscards', (hand) => {
+      const discards = prompt(`Выбери 2 карты для сноса (через запятую):\n${hand.join(', ')}`);
+      socket.emit('discard', discards.split(',').map(c => c.trim()));
+    });
+
+    socket.on('playCard', ({ hand, current }) => {
+      if (current !== 'p1') return;
+      const card = prompt(`Твой ход. Карты: ${hand.join(', ')}`);
+      socket.emit('play', card.trim());
+    });
+
+    socket.on('roundEnd', (results) => {
+      alert('Раунд завершён! Очки: ' + JSON.stringify(results));
+    });
+
+    socket.on('gameOver', ({ winner, scores }) => {
+      alert(`Игра окончена! Победил ${winner}. Очки: ` + JSON.stringify(scores));
+    });
+
+    function start() {
+      socket.emit('startGame', { mode: 'classic' });
+    }
+  </script>
+</body>
+</html>
